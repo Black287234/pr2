@@ -1,11 +1,16 @@
-https://psychic-space-trout-r7676rqpgxr93xw69-5109.app.github.dev = https://github.dev
+@host = https://github.dev
 
+### 1. Получить список всех студентов (включая Сергея)
 GET {{host}}/api/students
+
 ###
 
+### 2. Получить Анну по её ID (1)
 GET {{host}}/api/students/1
+
 ###
 
+### 3. Создать нового студента (выдаст ему следующий ID = 4)
 POST {{host}}/api/students
 Content-Type: application/json
 
@@ -13,8 +18,10 @@ Content-Type: application/json
   "name": "Мария",
   "course": 1
 }
+
 ###
 
+### 4. Изменить данные Анны (поставить ID = 1)
 PUT {{host}}/api/students/1
 Content-Type: application/json
 
@@ -22,11 +29,15 @@ Content-Type: application/json
   "name": "Анна Петрова",
   "course": 3
 }
+
 ###
 
+### 5. Удалить Илью по его ID (2)
 DELETE {{host}}/api/students/2
+
 ###
 
+### 6. Проверка валидации (вернет ошибку 400 из-за курса и пустого имени)
 POST {{host}}/api/students
 Content-Type: application/json
 
