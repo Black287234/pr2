@@ -1,4 +1,4 @@
-@host = http://localhost:5109
+@host = http://localhost:5000
 
 ### 1. Создать первого студента
 POST {{host}}/api/students
