@@ -31,6 +31,26 @@ namespace AspNetConfigPractice.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Students");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Course = 2,
+                            Name = "Анна"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Course = 3,
+                            Name = "Илья"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Course = 1,
+                            Name = "Сергей"
+                        });
                 });
 #pragma warning restore 612, 618
         }
