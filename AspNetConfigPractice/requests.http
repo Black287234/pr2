@@ -1,27 +1,33 @@
-@host = https://github.dev
+@host = http://localhost:5109
 
-### 1. Получить список всех студентов (включая Сергея)
-GET {{host}}/api/students
-
-###
-
-### 2. Получить Анну по её ID (1)
-GET {{host}}/api/students/1
-
-###
-
-### 3. Создать нового студента (выдаст ему следующий ID = 4)
+### 1. Создать первого студента
 POST {{host}}/api/students
 Content-Type: application/json
 
 {
-  "name": "Мария",
-  "course": 1
+  "name": "Анна",
+  "course": 2
 }
 
-###
+### 2. Создать второго студента
+POST {{host}}/api/students
+Content-Type: application/json
 
-### 4. Изменить данные Анны (поставить ID = 1)
+{
+  "name": "Илья",
+  "course": 3
+}
+
+### 3. Получить весь список
+GET {{host}}/api/students
+
+### 4. Фильтрация через LINQ
+GET {{host}}/api/students?course=2
+
+### 5. Получить запись по id
+GET {{host}}/api/students/1
+
+### 6. Изменить запись
 PUT {{host}}/api/students/1
 Content-Type: application/json
 
@@ -30,14 +36,19 @@ Content-Type: application/json
   "course": 3
 }
 
-###
-
-### 5. Удалить Илью по его ID (2)
+### 7. Удалить запись
 DELETE {{host}}/api/students/2
 
-###
+### 8. Проверить удалённую запись (ожидается 404)
+GET {{host}}/api/students/2
 
-### 6. Проверка валидации (вернет ошибку 400 из-за курса и пустого имени)
+### 9. Дополнительно: сортировка по имени
+GET {{host}}/api/students?sort=name
+
+### 10. Дополнительно: сортировка по курсу
+GET {{host}}/api/students?sort=course
+
+### 11. Проверка валидации (ожидается 400)
 POST {{host}}/api/students
 Content-Type: application/json
 

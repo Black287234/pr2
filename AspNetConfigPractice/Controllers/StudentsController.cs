@@ -1,5 +1,7 @@
+using AspNetConfigPractice.Data;
 using AspNetConfigPractice.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AspNetConfigPractice.Controllers;
 
@@ -7,28 +9,53 @@ namespace AspNetConfigPractice.Controllers;
 [Route("api/[controller]")]
 public class StudentsController : ControllerBase
 {
-    private static readonly List<Student> Students = new()
-    {
-        new Student { Id = 1, Name = "Анна", Course = 2 },
-        new Student { Id = 2, Name = "Илья", Course = 3 },
-        new Student { Id = 3, Name = "Сергей", Course = 1 } // Уже добавлено по мини-заданию
-    };
+    private readonly AppDbContext _db;
 
-    private static int _nextId = 4;
+    public StudentsController(AppDbContext db)
+    {
+        _db = db;
+    }
 
     private static StudentDto ToDto(Student student) =>
         new(student.Id, student.Name, student.Course);
 
+    // GET /api/students
+    // GET /api/students?course=2
+    // GET /api/students?sort=name | sort=course
     [HttpGet]
-    public ActionResult<IEnumerable<StudentDto>> GetAll()
+    public async Task<ActionResult<IEnumerable<StudentDto>>> GetAll(int? course, string? sort)
     {
-        return Ok(Students.Select(ToDto));
+        IQueryable<Student> query = _db.Students;
+
+        if (course.HasValue)
+            query = query.Where(s => s.Course == course.Value);
+
+        if (!string.IsNullOrWhiteSpace(sort))
+        {
+            switch (sort.ToLowerInvariant())
+            {
+                case "name":
+                    query = query.OrderBy(s => s.Name);
+                    break;
+                case "course":
+                    query = query.OrderBy(s => s.Course).ThenBy(s => s.Name);
+                    break;
+                default:
+                    return BadRequest("Параметр sort может быть только 'name' или 'course'.");
+            }
+        }
+
+        var result = await query
+            .Select(s => new StudentDto(s.Id, s.Name, s.Course))
+            .ToListAsync();
+
+        return Ok(result);
     }
 
     [HttpGet("{id:int}")]
-    public ActionResult<StudentDto> GetById(int id)
+    public async Task<ActionResult<StudentDto>> GetById(int id)
     {
-        var student = Students.FirstOrDefault(s => s.Id == id);
+        var student = await _db.Students.FindAsync(id);
         if (student is null)
             return NotFound();
 
@@ -36,41 +63,43 @@ public class StudentsController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<StudentDto> Create(CreateStudentDto request)
+    public async Task<ActionResult<StudentDto>> Create(CreateStudentDto request)
     {
         var student = new Student
         {
-            Id = _nextId++,
             Name = request.Name,
             Course = request.Course
         };
 
-        Students.Add(student);
+        _db.Students.Add(student);
+        await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetById), new { id = student.Id }, ToDto(student));
     }
 
     [HttpPut("{id:int}")]
-    public IActionResult Update(int id, UpdateStudentDto request)
+    public async Task<IActionResult> Update(int id, UpdateStudentDto request)
     {
-        var student = Students.FirstOrDefault(s => s.Id == id);
+        var student = await _db.Students.FindAsync(id);
         if (student is null)
             return NotFound();
 
         student.Name = request.Name;
         student.Course = request.Course;
+        await _db.SaveChangesAsync();
 
         return NoContent();
     }
 
     [HttpDelete("{id:int}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        var student = Students.FirstOrDefault(s => s.Id == id);
+        var student = await _db.Students.FindAsync(id);
         if (student is null)
             return NotFound();
 
-        Students.Remove(student);
+        _db.Students.Remove(student);
+        await _db.SaveChangesAsync();
 
         return NoContent();
     }
