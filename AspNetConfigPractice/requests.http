@@ -27,6 +27,9 @@ GET {{host}}/api/students?course=2
 ### 5. Получить запись по id
 GET {{host}}/api/students/1
 
+### 5а. Несуществующий id (ожидается 404)
+GET {{host}}/api/students/999
+
 ### 6. Изменить запись
 PUT {{host}}/api/students/1
 Content-Type: application/json

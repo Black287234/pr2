@@ -1,7 +1,6 @@
-using AspNetConfigPractice.Data;
 using AspNetConfigPractice.Models;
+using AspNetConfigPractice.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AspNetConfigPractice.Controllers;
 
@@ -9,15 +8,12 @@ namespace AspNetConfigPractice.Controllers;
 [Route("api/[controller]")]
 public class StudentsController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IStudentService _students;
 
-    public StudentsController(AppDbContext db)
+    public StudentsController(IStudentService students)
     {
-        _db = db;
+        _students = students;
     }
-
-    private static StudentDto ToDto(Student student) =>
-        new(student.Id, student.Name, student.Course);
 
     // GET /api/students
     // GET /api/students?course=2
@@ -25,68 +21,34 @@ public class StudentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<StudentDto>>> GetAll(int? course, string? sort)
     {
-        IQueryable<Student> query = _db.Students;
-
-        if (course.HasValue)
-            query = query.Where(s => s.Course == course.Value);
-
-        if (!string.IsNullOrWhiteSpace(sort))
-        {
-            switch (sort.ToLowerInvariant())
-            {
-                case "name":
-                    query = query.OrderBy(s => s.Name);
-                    break;
-                case "course":
-                    query = query.OrderBy(s => s.Course).ThenBy(s => s.Name);
-                    break;
-                default:
-                    return BadRequest("Параметр sort может быть только 'name' или 'course'.");
-            }
-        }
-
-        var result = await query
-            .Select(s => new StudentDto(s.Id, s.Name, s.Course))
-            .ToListAsync();
-
+        var result = await _students.GetAllAsync(course, sort);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<StudentDto>> GetById(int id)
     {
-        var student = await _db.Students.FindAsync(id);
+        var student = await _students.GetByIdAsync(id);
         if (student is null)
             return NotFound();
 
-        return Ok(ToDto(student));
+        return Ok(student);
     }
 
     [HttpPost]
     public async Task<ActionResult<StudentDto>> Create(CreateStudentDto request)
     {
-        var student = new Student
-        {
-            Name = request.Name,
-            Course = request.Course
-        };
+        var created = await _students.CreateAsync(request);
 
-        _db.Students.Add(student);
-        await _db.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetById), new { id = student.Id }, ToDto(student));
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, UpdateStudentDto request)
     {
-        var student = await _db.Students.FindAsync(id);
-        if (student is null)
+        var updated = await _students.UpdateAsync(id, request);
+        if (!updated)
             return NotFound();
-
-        student.Name = request.Name;
-        student.Course = request.Course;
-        await _db.SaveChangesAsync();
 
         return NoContent();
     }
@@ -94,12 +56,9 @@ public class StudentsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var student = await _db.Students.FindAsync(id);
-        if (student is null)
+        var deleted = await _students.DeleteAsync(id);
+        if (!deleted)
             return NotFound();
-
-        _db.Students.Remove(student);
-        await _db.SaveChangesAsync();
 
         return NoContent();
     }
